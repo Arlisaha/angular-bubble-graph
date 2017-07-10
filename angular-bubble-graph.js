@@ -101,7 +101,7 @@ angular.module('bubbleGraph', [])
 						found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
 
 					if(found !== -1) {
-						$scope.$parent.$broadcast('bubble_clicked', canvasData.bubbles[found]);
+						$scope.$parent.$root.$broadcast('bubble_clicked', canvasData.bubbles[found]);
 					}
 				};
 			}]
