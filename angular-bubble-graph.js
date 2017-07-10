@@ -12,10 +12,10 @@ angular.module('bubbleGraph', [])
 				data: '=data'
 			},
 			controller: ['$scope', '$attrs', 'bubblesGraph', function($scope, $attrs, bubblesGraph) {
-				let arrowPosition, found = -1,
+				let found = -1,
 					canvas = document.querySelector('#' + $attrs.id),
 					context = canvas.getContext('2d'),
-					canvasData = bubblesGraph.define(
+					canvasData = bubblesGraph.definePositions(
 						$scope.data,
 						parseInt($scope.width),
 						parseInt($scope.height),
@@ -27,6 +27,30 @@ angular.module('bubbleGraph', [])
 						$attrs.granularity != null ? $attrs.granularity : 512
 					),
 					bubbles = canvasData.bubbles;
+
+				for (let i = 0;i < bubbles.length;++i) {
+					bubbles[i].x += canvasData.width / 2;
+					bubbles[i].y += canvasData.height / 2;
+
+					bubbles[i].color = Object.assign({hue: bubbles[i].r > 360 ? bubbles[i].r - 360 : bubbles[i].r, saturation: 80, light: 40, alpha: 0.1}, bubbles[i].color);
+					if(!('stroke' in bubbles[i])) {
+						bubbles[i].stroke = {color: {}};
+					}
+					bubbles[i].stroke.color = Object.assign({hue: bubbles[i].color.hue, saturation: 60, light: 40, alpha: 1}, bubbles[i].stroke.color);
+					bubbles[i].stroke = Object.assign({lineWidth: 1}, bubbles[i].stroke);
+					bubbles[i].text.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, bubbles[i].text.color);
+					bubbles[i].text = Object.assign({font: '10px sans serif'}, bubbles[i].text);
+					bubbles[i].tooltip.text.color = Object.assign({hue: 0, saturation: 100, light: 100, alpha: 1}, bubbles[i].tooltip.text.color);
+					bubbles[i].tooltip.text = Object.assign({font: '10px sans serif'}, bubbles[i].tooltip.text);
+					bubbles[i].tooltip.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 0.8}, bubbles[i].tooltip.color);
+					if(!('stroke' in bubbles[i].tooltip)) {
+						bubbles[i].tooltip.stroke = {color: {}};
+					}
+					bubbles[i].tooltip.stroke.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, bubbles[i].tooltip.stroke.color);
+					bubbles[i].tooltip.stroke = Object.assign({lineWidth: 0}, bubbles[i].tooltip.stroke);
+					bubbles[i].tooltip = Object.assign({position: 'left'}, {position: $attrs.tooltipPosition}, bubbles[i].tooltip);
+					bubbles[i] = Object.assign({clickable: false}, bubbles[i]);
+				}
 
 				canvas.width = canvasData.width;
 				canvas.height = canvasData.height;
@@ -50,7 +74,7 @@ angular.module('bubbleGraph', [])
 							bubbles[found],
 							context,
 							{saturation: 40, light: 80},
-							{color: {saturation: 40, light: 60, alpha: 0.8}, lineWidth: 1.5},
+							{},
 							{color:{alpha: 0.9}}
 						);
 
@@ -61,23 +85,9 @@ angular.module('bubbleGraph', [])
 						}
 
 						if($attrs.tooltipType === 'arrow') {
-							switch($attrs.tooltipPosition) {
-								case 'top':
-									arrowPosition = 'bottom';
-									break;
-								case 'right':
-									arrowPosition = 'left';
-									break;
-								case 'bottom':
-									arrowPosition = 'top';
-									break;
-								case 'left':
-									arrowPosition = 'right';
-									break;
-							}
-							bubblesGraph.drawBubbleArrowTooltip(context, bubbles[found], {position: arrowPosition});
+							bubblesGraph.drawBubbleArrowTooltip(context, bubbles[found]);
 						} else if ($attrs.tooltipType === 'caption') {
-							bubblesGraph.drawBubbleCaptionTooltip(context, bubbles[found], $attrs.tooltipPosition);
+							bubblesGraph.drawBubbleCaptionTooltip(context, bubbles[found]);
 						}
 					} else {
 						canvas.style.cursor = "default";
@@ -85,6 +95,11 @@ angular.module('bubbleGraph', [])
 				};
 
 				canvas.onclick = function(e) {
+					let rect = this.getBoundingClientRect(),
+						x = e.clientX - rect.left,
+						y = e.clientY - rect.top,
+						found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
+
 					if(found !== -1) {
 						$scope.$parent.$broadcast('bubble_clicked', canvasData.bubbles[found]);
 					}
@@ -94,7 +109,7 @@ angular.module('bubbleGraph', [])
 	})
 	.factory('bubblesGraph', function() {
 		return {
-			define: function(data, width, height, sort, randomize, restrictOrientation, fixedWidth, fixedHeight, granularity, defaultDirectionX = 0, defaultDirectionY = 1) {
+			definePositions: function(data, width, height, sort, randomize, restrictOrientation, fixedWidth, fixedHeight, granularity, defaultDirectionX = 0, defaultDirectionY = 1) {
 				let t, directionX, directionY,
 					k = restrictOrientation === 'v' ? granularity / 2 : 0,
 					l = 0,
@@ -181,11 +196,6 @@ angular.module('bubbleGraph', [])
 					}
 				}
 
-				for (let i = 0;i < data.length;++i) {
-					data[i].x += Math.ceil(width) / 2;
-					data[i].y += Math.ceil(height) / 2;
-				}
-
 				return {
 					bubbles: data,
 					width: Math.ceil(width),
@@ -199,26 +209,26 @@ angular.module('bubbleGraph', [])
 					}
 				}
 			},
-			drawOne: function(bubble, context, fill = {}, stroke = {color: {}}, text = {color: {}}) {
-				fill = Object.assign({hue: 0, saturation: 80, light: 40, alpha: 0.1}, fill);
-				stroke.color = Object.assign({saturation: 60, light: 40, alpha: 1}, stroke.color);
-				stroke = Object.assign({lineWidth: 1}, stroke);
-				text.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, text.color);
-				text = Object.assign({font: '10px sans serif'}, text);
+			drawOne: function(bubble, context, fill = {}, stroke = {}, text = {}) {
+				fill = Object.assign({}, bubble.color, fill);
+				stroke.color = Object.assign({}, bubble.stroke.color, stroke.color);
+				stroke = Object.assign({}, bubble.stroke, stroke);
+				text.color = Object.assign({}, bubble.text.color, text.color);
+				text = Object.assign({}, bubble.text, text);
 
 				this.drawCircle(
 					context,
 					bubble.x,
 					bubble.y,
 					bubble.r,
-					'hsla(' + (bubble.color != null ? bubble.color : fill.hue) + ', ' + fill.saturation + '%, ' + fill.light +'%, ' + fill.alpha +')',
-					'hsla(' + (bubble.color != null ? bubble.color : stroke.color.hue) + ', ' + stroke.color.saturation + '%, ' + stroke.color.light +'%, ' + stroke.color.alpha + ')',
+					'hsla(' + fill.hue + ', ' + fill.saturation + '%, ' + fill.light +'%, ' + fill.alpha +')',
+					'hsla(' + stroke.color.hue + ', ' + stroke.color.saturation + '%, ' + stroke.color.light +'%, ' + stroke.color.alpha + ')',
 					stroke.lineWidth
 				);
 
 				this.drawText(
 					context,
-					bubble.text,
+					bubble.text.value,
 					bubble.x,
 					bubble.y,
 					2 * bubble.r,
@@ -226,18 +236,12 @@ angular.module('bubbleGraph', [])
 					'hsla(' + text.color.hue + ', ' + text.color.saturation + '%, ' + text.color.light +'%, ' + text.color.alpha +')'
 				);
 			},
-			drawBubbleCaptionTooltip: function(context, bubble, captionPosition = 'top', fill = {}, stroke = {color: {}}, text = {color: {}}) {
-				fill = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 0.8}, fill);
-				stroke.color = Object.assign({saturation: 60, light: 40, alpha: 1}, stroke.color);
-				stroke = Object.assign({lineWidth: 0}, stroke);
-				text.color = Object.assign({hue: 0, saturation: 100, light: 100, alpha: 1}, text.color);
-				text = Object.assign({font: '10px sans serif'}, text);
-
+			drawBubbleCaptionTooltip: function(context, bubble) {
 				let x, y,
-					tooltipWidth = context.measureText(bubble.tooltip.text).width + 20,
+					tooltipWidth = context.measureText(bubble.tooltip.text.value).width + 20,
 					tooltipHeight = context.measureText('A').width * 5;
 
-				switch(captionPosition) {
+				switch(bubble.tooltip.position) {
 					case 'top-left':
 						x = y = 0;
 						break;
@@ -278,48 +282,45 @@ angular.module('bubbleGraph', [])
 					tooltipWidth,
 					tooltipHeight,
 					10,
-					{},
-					fill,
-					stroke
+					'hsla(' + bubble.tooltip.color.hue + ', ' + bubble.tooltip.color.saturation + '%, ' + bubble.tooltip.color.light +'%, ' + bubble.tooltip.color.alpha +')',
+					bubble.tooltip.stroke.lineWidth,
+					'hsla(' + bubble.tooltip.stroke.color.hue + ', ' + bubble.tooltip.color.saturation + '%, ' + bubble.tooltip.color.light +'%, ' + bubble.tooltip.color.alpha +')'
 				);
 
 				this.drawText(
 					context,
-					bubble.tooltip.text,
+					bubble.tooltip.text.value,
 					x + tooltipWidth / 2,
 					y + tooltipHeight / 2,
 					tooltipWidth,
-					text.font,
-					'hsla(' + text.color.hue + ', ' + text.color.saturation + '%, ' + text.color.light +'%, ' + text.color.alpha +')'
+					bubble.tooltip.text.font,
+					'hsla(' + bubble.tooltip.text.color.hue + ', ' + bubble.tooltip.text.color.saturation + '%, ' + bubble.tooltip.text.color.light +'%, ' + bubble.tooltip.text.color.alpha +')'
 				);
 			},
-			drawBubbleArrowTooltip: function(context, bubble, arrowPosition = {}, fill = {}, stroke = {color: {}}, text = {color: {}}) {
-				fill = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 0.8}, fill);
-				stroke.color = Object.assign({saturation: 60, light: 40, alpha: 1}, stroke.color);
-				stroke = Object.assign({lineWidth: 0}, stroke);
-				text.color = Object.assign({hue: 0, saturation: 100, light: 100, alpha: 1}, text.color);
-				text = Object.assign({font: '10px sans serif'}, text);
-				arrowPosition = Object.assign({position: 'right', height: 10}, arrowPosition);
-
-				let x, y,
-					tooltipWidth = context.measureText(bubble.tooltip.text).width + 20,
+			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
+				let x, y, arrowPosition,
+					tooltipWidth = context.measureText(bubble.tooltip.text.value).width + 20,
 					tooltipHeight = context.measureText('A').width * 5;
 
-				switch(arrowPosition.position) {
-					case 'top':
-						x = bubble.x - tooltipWidth / 2;
-						y = bubble.y + bubble.r + arrowPosition.height;
-						break;
-					case 'right':
-						x = bubble.x - bubble.r - arrowPosition.height - tooltipWidth;
-						y = bubble.y - (tooltipHeight / 2);
-						break;
+				switch(bubble.tooltip.position) {
 					case 'bottom':
+						arrowPosition = 'top';
 						x = bubble.x - tooltipWidth / 2;
-						y = bubble.y - bubble.r - arrowPosition.height - tooltipHeight;
+						y = bubble.y + bubble.r + arrowHeight;
 						break;
 					case 'left':
-						x = bubble.x + bubble.r + arrowPosition.height;
+						arrowPosition = 'right';
+						x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
+						y = bubble.y - (tooltipHeight / 2);
+						break;
+					case 'top':
+						arrowPosition = 'bottom';
+						x = bubble.x - tooltipWidth / 2;
+						y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
+						break;
+					case 'right':
+						arrowPosition = 'left';
+						x = bubble.x + bubble.r + arrowHeight;
 						y = bubble.y - (tooltipHeight / 2);
 						break;
 				}
@@ -331,19 +332,21 @@ angular.module('bubbleGraph', [])
 					tooltipWidth,
 					tooltipHeight,
 					10,
+					'hsla(' + bubble.tooltip.color.hue + ', ' + bubble.tooltip.color.saturation + '%, ' + bubble.tooltip.color.light +'%, ' + bubble.tooltip.color.alpha +')',
+					bubble.tooltip.stroke.lineWidth,
+					'hsla(' + bubble.tooltip.stroke.color.hue + ', ' + bubble.tooltip.color.saturation + '%, ' + bubble.tooltip.color.light +'%, ' + bubble.tooltip.color.alpha +')',
 					arrowPosition,
-					fill,
-					stroke
+					arrowHeight
 				);
 
 				this.drawText(
 					context,
-					bubble.tooltip.text,
+					bubble.tooltip.text.value,
 					x + tooltipWidth / 2,
 					y + tooltipHeight / 2,
 					tooltipWidth,
-					text.font,
-					'hsla(' + text.color.hue + ', ' + text.color.saturation + '%, ' + text.color.light +'%, ' + text.color.alpha +')'
+					bubble.tooltip.text.font,
+					'hsla(' + bubble.tooltip.text.color.hue + ', ' + bubble.tooltip.text.color.saturation + '%, ' + bubble.tooltip.text.color.light +'%, ' + bubble.tooltip.text.color.alpha +')'
 				);
 			},
 			drawCircle: function(context, x, y, radius, fillStyle, strokeStyle, lineWidth) {
@@ -371,7 +374,7 @@ angular.module('bubbleGraph', [])
 				}
 				context.closePath();
 			},
-			drawTooltipBox: function(context, x, y, width, height, radius = 5, arrow, fill, stroke) {
+			drawTooltipBox: function(context, x, y, width, height, radius = 5, fill, strokeLineWidth, strokeStyle, arrowPosition, arrowHeight) {
 				if (typeof radius === 'number') {
 					radius = {tl: radius, tr: radius, br: radius, bl: radius};
 				} else {
@@ -382,36 +385,36 @@ angular.module('bubbleGraph', [])
 				}
 				context.beginPath();
 				context.moveTo(x + radius.tl, y);
-				if(arrow.position === 'top') {
+				if(arrowPosition === 'top') {
 					context.lineTo(x + width / 3, y);
-					context.lineTo(x + width / 2, y - arrow.height);
+					context.lineTo(x + width / 2, y - arrowHeight);
 					context.lineTo(x + 2 * width / 3, y);
 					context.lineTo(x + width - radius.tr, y);
 				} else {
 					context.lineTo(x + width - radius.tr, y);
 				}
 				context.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
-				if(arrow.position === 'right') {
+				if(arrowPosition === 'right') {
 					context.lineTo(x + width, y + height / 3);
-					context.lineTo(x + width + arrow.height, y + height / 2);
+					context.lineTo(x + width + arrowHeight, y + height / 2);
 					context.lineTo(x + width, y + 2 * height / 3);
 					context.lineTo(x + width, y + height - radius.br);
 				} else {
 					context.lineTo(x + width, y + height - radius.br);
 				}
 				context.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
-				if(arrow.position === 'bottom') {
+				if(arrowPosition === 'bottom') {
 					context.lineTo(x + 2 * width / 3, y + height);
-					context.lineTo(x + width / 2, y + height + arrow.height);
+					context.lineTo(x + width / 2, y + height + arrowHeight);
 					context.lineTo(x + width / 3, y + height);
 					context.lineTo(x + radius.bl, y + height);
 				} else {
 					context.lineTo(x + radius.bl, y + height);
 				}
 				context.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
-				if(arrow.position === 'left') {
+				if(arrowPosition === 'left') {
 					context.lineTo(x, y + 2 * height / 3);
-					context.lineTo(x - arrow.height, y + height / 2);
+					context.lineTo(x - arrowHeight, y + height / 2);
 					context.lineTo(x, y + height / 3);
 					context.lineTo(x, y + radius.tl);
 				} else {
@@ -419,12 +422,12 @@ angular.module('bubbleGraph', [])
 				}
 				context.quadraticCurveTo(x, y, x + radius.tl, y);
 				if(fill != null) {
-					context.fillStyle = 'hsla(' + fill.hue + ', ' + fill.saturation + '%, ' + fill.light +'%, ' + fill.alpha +')';
+					context.fillStyle = fill;
 					context.fill();
 				}
-				if(stroke != null && stroke.lineWidth > 0) {
-					context.lineWidth = stroke.lineWidth;
-					context.strokeStyle = 'hsla(' + stroke.color.hue + ', ' + stroke.color.saturation + '%, ' + stroke.color.light +'%, ' + stroke.color.alpha +')';
+				if(strokeLineWidth > 0) {
+					context.lineWidth = strokeLineWidth;
+					context.strokeStyle = strokeStyle;
 					context.stroke();
 				}
 				context.closePath();
