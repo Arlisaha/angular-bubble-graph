@@ -122,6 +122,11 @@ angular.module('bubbleGraph', [])
 						return (sort === 'desc') ? (b.r - a.r) : (a.r - b.r);
 					});
 				}
+				
+				for (let i = 0;i < data.length;++i) {
+					data[i].x = i * Math.pow(width, 2);
+					data[i].y = i * Math.pow(height, 2);
+				}
 
 				for (let j = 1; j < data.length; ++j) {
 					inCircle = true;
