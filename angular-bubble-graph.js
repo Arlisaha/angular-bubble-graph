@@ -122,7 +122,7 @@ angular.module('bubbleGraph', [])
 						return (sort === 'desc') ? (b.r - a.r) : (a.r - b.r);
 					});
 				}
-				
+
 				for (let i = 0;i < data.length;++i) {
 					data[i].x = i * Math.pow(width, 2);
 					data[i].y = i * Math.pow(height, 2);
@@ -191,13 +191,13 @@ angular.module('bubbleGraph', [])
 
 				if(!fixedHeight) {
 					for (let i = 0;i < data.length;++i) {
-						height += Math.abs(data[i].y + data[i].r) >= height / 2 ? Math.abs(Math.abs(data[i].y + data[i].r) - height / 2) + 3 : 0;
+						height += Math.abs(data[i].y) + 3 + data[i].r >= height / 2 ? Math.abs(Math.abs(data[i].y) + 3 + data[i].r - (height / 2)) + 5 : 0;
 					}
 				}
 
 				if(!fixedWidth) {
 					for (let i = 0;i < data.length;++i) {
-						width += Math.abs(data[i].x + data[i].r) >= width / 2 ? Math.abs(Math.abs(data[i].x + data[i].r) - width / 2) + 3 : 0;
+						width += Math.abs(data[i].x) + 3 + data[i].r >= width / 2 ? Math.abs(Math.abs(data[i].x)+ 3 + data[i].r - (width / 2)) + 5 : 0;
 					}
 				}
 
@@ -233,17 +233,18 @@ angular.module('bubbleGraph', [])
 
 				this.drawText(
 					context,
-					bubble.text.value,
+					bubble.text.lines,
 					bubble.x,
 					bubble.y,
 					2 * bubble.r,
 					text.font,
-					'hsla(' + text.color.hue + ', ' + text.color.saturation + '%, ' + text.color.light +'%, ' + text.color.alpha +')'
+					'hsla(' + text.color.hue + ', ' + text.color.saturation + '%, ' + text.color.light +'%, ' + text.color.alpha +')',
+					true
 				);
 			},
 			drawBubbleCaptionTooltip: function(context, bubble) {
 				let x, y,
-					tooltipWidth = context.measureText(bubble.tooltip.text.value).width + 20,
+					tooltipWidth = context.measureText(bubble.tooltip.text.lines).width + 20,
 					tooltipHeight = context.measureText('A').width * 5;
 
 				switch(bubble.tooltip.position) {
@@ -294,7 +295,7 @@ angular.module('bubbleGraph', [])
 
 				this.drawText(
 					context,
-					bubble.tooltip.text.value,
+					bubble.tooltip.text.lines,
 					x + tooltipWidth / 2,
 					y + tooltipHeight / 2,
 					tooltipWidth,
@@ -303,30 +304,59 @@ angular.module('bubbleGraph', [])
 				);
 			},
 			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
-				let x, y, arrowPosition,
-					tooltipWidth = context.measureText(bubble.tooltip.text.value).width + 20,
-					tooltipHeight = context.measureText('A').width * 5;
+				let x, y, arrowPosition, tooltipWidth = 0, textHeight = bubble.tooltip.text.lines.length > 1 ? context.measureText('A').width * (bubble.tooltip.text.lines.length) : 0,
+					tooltipHeight = context.measureText('W').width * (bubble.tooltip.text.lines.length + 3);
+
+				for(let i = 0; i < bubble.tooltip.text.lines.length;++i) {
+					if(context.measureText(bubble.tooltip.text.lines[i]).width > tooltipWidth) {
+						tooltipWidth = context.measureText(bubble.tooltip.text.lines[i]).width + 20;
+					}
+				}
 
 				switch(bubble.tooltip.position) {
 					case 'bottom':
-						arrowPosition = 'top';
 						x = bubble.x - tooltipWidth / 2;
 						y = bubble.y + bubble.r + arrowHeight;
+						if(y + tooltipHeight > context.canvas.height) {
+							x = bubble.x - tooltipWidth / 2;
+							y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
+							arrowPosition = 'bottom';
+						} else {
+							arrowPosition = 'top';
+						}
 						break;
 					case 'left':
-						arrowPosition = 'right';
 						x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
 						y = bubble.y - (tooltipHeight / 2);
+						if(x < 0) {
+							x = bubble.x + bubble.r + arrowHeight;
+							y = bubble.y - (tooltipHeight / 2);
+							arrowPosition = 'left';
+						} else {
+							arrowPosition = 'right';
+						}
 						break;
 					case 'top':
-						arrowPosition = 'bottom';
 						x = bubble.x - tooltipWidth / 2;
 						y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
+						if(y < 0) {
+							x = bubble.x - tooltipWidth / 2;
+							y = bubble.y + bubble.r + arrowHeight;
+							arrowPosition = 'top';
+						} else {
+							arrowPosition = 'bottom';
+						}
 						break;
 					case 'right':
-						arrowPosition = 'left';
 						x = bubble.x + bubble.r + arrowHeight;
 						y = bubble.y - (tooltipHeight / 2);
+						if(x + tooltipWidth > context.canvas.width) {
+							x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
+							y = bubble.y - (tooltipHeight / 2);
+							arrowPosition = 'right';
+						} else {
+							arrowPosition = 'left';
+						}
 						break;
 				}
 
@@ -346,9 +376,9 @@ angular.module('bubbleGraph', [])
 
 				this.drawText(
 					context,
-					bubble.tooltip.text.value,
+					bubble.tooltip.text.lines,
 					x + tooltipWidth / 2,
-					y + tooltipHeight / 2,
+					y + tooltipHeight / 2 - textHeight / 2,
 					tooltipWidth,
 					bubble.tooltip.text.font,
 					'hsla(' + bubble.tooltip.text.color.hue + ', ' + bubble.tooltip.text.color.saturation + '%, ' + bubble.tooltip.text.color.light +'%, ' + bubble.tooltip.text.color.alpha +')'
@@ -364,20 +394,33 @@ angular.module('bubbleGraph', [])
 				context.stroke();
 				context.closePath();
 			},
-			drawText: function(context, text, x, y, maxWidth, font, style, centraliseText = true) {
-				let textWidth, textHeight = context.measureText('0').width;
-				context.beginPath();
-				context.font = font;
-				textWidth = context.measureText(text).width;
-				if (textWidth < maxWidth) {
-					context.fillStyle = style;
-					context.fillText(
-						text,
-						x - (centraliseText ? textWidth / 2 : 0),
-						y + (centraliseText ? textHeight / 2 : 0)
-					);
+			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false) {
+				let textWidth = 0, textHeight = context.measureText('0').width;
+
+				if(!alignCenter) {
+					for(let i = 0; i < textLines.length;++i) {
+						if(context.measureText(textLines[i]).width > textWidth) {
+							textWidth = context.measureText(textLines[i]).width;
+						}
+					}
 				}
-				context.closePath();
+
+				for(let j = 0; j < textLines.length;++j) {
+					if(alignCenter) {
+						textWidth = context.measureText(textLines[j]).width;
+					}
+					context.beginPath();
+					context.font = font;
+					if (textWidth < maxWidth) {
+						context.fillStyle = style;
+						context.fillText(
+							textLines[j],
+							x - textWidth / 2,
+							y + textHeight / 2 + j * (textHeight + 5)
+						);
+					}
+					context.closePath();
+				}
 			},
 			drawTooltipBox: function(context, x, y, width, height, radius = 5, fill, strokeLineWidth, strokeStyle, arrowPosition, arrowHeight) {
 				if (typeof radius === 'number') {
