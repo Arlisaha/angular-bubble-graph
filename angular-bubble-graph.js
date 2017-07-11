@@ -56,7 +56,7 @@ angular.module('bubbleGraph', [])
 				canvas.height = canvasData.height;
 				bubblesGraph.draw(bubbles, context);
 
-				canvas.onselectstart = function(e) {
+				canvas.onselectstart = function() {
 					return false;
 				};
 
@@ -69,7 +69,7 @@ angular.module('bubbleGraph', [])
 					context.clearRect(0, 0, canvas.width, canvas.height);
 					bubblesGraph.draw(bubbles, context, found);
 
-					if (found != -1) {
+					if (found !== -1) {
 						bubblesGraph.drawOne(
 							bubbles[found],
 							context,
@@ -243,9 +243,13 @@ angular.module('bubbleGraph', [])
 				);
 			},
 			drawBubbleCaptionTooltip: function(context, bubble) {
-				let x, y,
-					tooltipWidth = context.measureText(bubble.tooltip.text.lines).width + 20,
-					tooltipHeight = context.measureText('A').width * 5;
+				let x, y, tooltipWidth = 0, tooltipHeight = context.measureText('M').width * (bubble.tooltip.text.lines.length + 3);
+
+				for(let i = 0; i < bubble.tooltip.text.lines.length;++i) {
+					if(context.measureText(bubble.tooltip.text.lines[i]).width > tooltipWidth) {
+						tooltipWidth = context.measureText(bubble.tooltip.text.lines[i]).width + 20 + 3 * bubble.tooltip.text.lines.length;
+					}
+				}
 
 				switch(bubble.tooltip.position) {
 					case 'top-left':
@@ -304,12 +308,12 @@ angular.module('bubbleGraph', [])
 				);
 			},
 			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
-				let x, y, arrowPosition, tooltipWidth = 0, textHeight = bubble.tooltip.text.lines.length > 1 ? context.measureText('A').width * (bubble.tooltip.text.lines.length) : 0,
-					tooltipHeight = context.measureText('W').width * (bubble.tooltip.text.lines.length + 3);
+				let x, y, arrowPosition, tooltipWidth = 0, textHeight = bubble.tooltip.text.lines.length > 1 ? context.measureText('M').width * (bubble.tooltip.text.lines.length) : 0,
+					tooltipHeight = context.measureText('M').width * (bubble.tooltip.text.lines.length + 3);
 
 				for(let i = 0; i < bubble.tooltip.text.lines.length;++i) {
 					if(context.measureText(bubble.tooltip.text.lines[i]).width > tooltipWidth) {
-						tooltipWidth = context.measureText(bubble.tooltip.text.lines[i]).width + 20;
+						tooltipWidth = context.measureText(bubble.tooltip.text.lines[i]).width + 20 + 3 * bubble.tooltip.text.lines.length;
 					}
 				}
 
@@ -395,30 +399,39 @@ angular.module('bubbleGraph', [])
 				context.closePath();
 			},
 			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false) {
-				let textWidth = 0, textHeight = font.split(' ')[0].replace(/[A-ZA-z]+/, '');
+				let textWidth, textHeight, lines = [];
+
+				context.font = font;
+
+				for(let k = 0; k < textLines.length;++k) {
+					textWidth = context.measureText(textLines[k]).width;
+					if (textWidth < maxWidth) {
+						lines.push(textLines[k]);
+					}
+				}
+
+				textWidth = 0;
+				textHeight = context.measureText('M').width;
 
 				if(!alignCenter) {
-					for(let i = 0; i < textLines.length;++i) {
-						if(context.measureText(textLines[i]).width > textWidth) {
-							textWidth = context.measureText(textLines[i]).width;
+					for(let i = 0; i < lines.length;++i) {
+						if(context.measureText(lines[i]).width > textWidth) {
+							textWidth = context.measureText(lines[i]).width;
 						}
 					}
 				}
 
-				for(let j = 0; j < textLines.length;++j) {
+				for(let j = 0; j < lines.length;++j) {
 					if(alignCenter) {
-						textWidth = context.measureText(textLines[j]).width;
+						textWidth = context.measureText(lines[j]).width;
 					}
 					context.beginPath();
-					context.font = font;
-					if (textWidth < maxWidth) {
-						context.fillStyle = style;
-						context.fillText(
-							textLines[j],
-							x - textWidth / 2,
-							y + textHeight / 2 + j * (textHeight)
-						);
-					}
+					context.fillStyle = style;
+					context.fillText(
+						lines[j],
+						x - textWidth / 2,
+						y + (textHeight / 2) + (j * (textHeight + 3)) - (lines.length > 1 && alignCenter ? lines.length * (textHeight - 3) / 2 : 0)
+					);
 					context.closePath();
 				}
 			},
