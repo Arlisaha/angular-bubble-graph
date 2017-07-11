@@ -395,7 +395,7 @@ angular.module('bubbleGraph', [])
 				context.closePath();
 			},
 			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false) {
-				let textWidth = 0, textHeight = context.measureText('0').width;
+				let textWidth = 0, textHeight = font.split(' ')[0].replace(/[A-ZA-z]+/, '');
 
 				if(!alignCenter) {
 					for(let i = 0; i < textLines.length;++i) {
@@ -416,7 +416,7 @@ angular.module('bubbleGraph', [])
 						context.fillText(
 							textLines[j],
 							x - textWidth / 2,
-							y + textHeight / 2 + j * (textHeight + 5)
+							y + textHeight / 2 + j * (textHeight)
 						);
 					}
 					context.closePath();
