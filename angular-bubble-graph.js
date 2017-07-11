@@ -12,98 +12,78 @@ angular.module('bubbleGraph', [])
 				data: '=data'
 			},
 			controller: ['$scope', '$attrs', 'bubblesGraph', function($scope, $attrs, bubblesGraph) {
-				let found = -1,
-					canvas = document.querySelector('#' + $attrs.id),
-					context = canvas.getContext('2d'),
-					canvasData = bubblesGraph.definePositions(
-						$scope.data,
-						parseInt($scope.width),
-						parseInt($scope.height),
-						$attrs.sort,
-						$attrs.randomize != null,
-						$attrs.orientation,
-						$attrs.fixedWidth != null,
-						$attrs.fixedHeight != null,
-						$attrs.granularity != null ? $attrs.granularity : 512
-					),
-					bubbles = canvasData.bubbles;
+				$scope.$watch('data', function() {
+					let found = -1,
+						canvas = document.querySelector('#' + $attrs.id),
+						context = canvas.getContext('2d'),
+						canvasData = bubblesGraph.definePositions(
+							$scope.data,
+							parseInt($scope.width),
+							parseInt($scope.height),
+							$attrs.sort,
+							$attrs.randomize != null,
+							$attrs.orientation,
+							$attrs.fixedWidth != null,
+							$attrs.fixedHeight != null,
+							$attrs.granularity != null ? $attrs.granularity : 512
+						),
+						bubbles = canvasData.bubbles;
 
-				for (let i = 0;i < bubbles.length;++i) {
-					bubbles[i].x += canvasData.width / 2;
-					bubbles[i].y += canvasData.height / 2;
+					bubblesGraph.normalizeBubbles(canvasData, $attrs.tooltipPosition);
 
-					bubbles[i].color = Object.assign({hue: bubbles[i].r > 360 ? bubbles[i].r - 360 : bubbles[i].r, saturation: 80, light: 40, alpha: 0.1}, bubbles[i].color);
-					if(!('stroke' in bubbles[i])) {
-						bubbles[i].stroke = {color: {}};
-					}
-					bubbles[i].stroke.color = Object.assign({hue: bubbles[i].color.hue, saturation: 60, light: 40, alpha: 1}, bubbles[i].stroke.color);
-					bubbles[i].stroke = Object.assign({lineWidth: 1}, bubbles[i].stroke);
-					bubbles[i].text.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, bubbles[i].text.color);
-					bubbles[i].text = Object.assign({font: '10px sans serif'}, bubbles[i].text);
-					bubbles[i].tooltip.text.color = Object.assign({hue: 0, saturation: 100, light: 100, alpha: 1}, bubbles[i].tooltip.text.color);
-					bubbles[i].tooltip.text = Object.assign({font: '10px sans serif'}, bubbles[i].tooltip.text);
-					bubbles[i].tooltip.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 0.8}, bubbles[i].tooltip.color);
-					if(!('stroke' in bubbles[i].tooltip)) {
-						bubbles[i].tooltip.stroke = {color: {}};
-					}
-					bubbles[i].tooltip.stroke.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, bubbles[i].tooltip.stroke.color);
-					bubbles[i].tooltip.stroke = Object.assign({lineWidth: 0}, bubbles[i].tooltip.stroke);
-					bubbles[i].tooltip = Object.assign({position: 'left'}, {position: $attrs.tooltipPosition}, bubbles[i].tooltip);
-					bubbles[i] = Object.assign({clickable: false}, bubbles[i]);
-				}
+					canvas.width = canvasData.width;
+					canvas.height = canvasData.height;
+					bubblesGraph.draw(bubbles, context);
 
-				canvas.width = canvasData.width;
-				canvas.height = canvasData.height;
-				bubblesGraph.draw(bubbles, context);
+					canvas.onselectstart = function() {
+						return false;
+					};
 
-				canvas.onselectstart = function() {
-					return false;
-				};
+					canvas.onmousemove = function(e) {
+						let rect = this.getBoundingClientRect(),
+							x = e.clientX - rect.left,
+							y = e.clientY - rect.top;
 
-				canvas.onmousemove = function(e) {
-					let rect = this.getBoundingClientRect(),
-						x = e.clientX - rect.left,
-						y = e.clientY - rect.top;
+						found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
+						context.clearRect(0, 0, canvas.width, canvas.height);
+						bubblesGraph.draw(bubbles, context, found);
 
-					found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
-					context.clearRect(0, 0, canvas.width, canvas.height);
-					bubblesGraph.draw(bubbles, context, found);
+						if (found !== -1) {
+							bubblesGraph.drawOne(
+								bubbles[found],
+								context,
+								{saturation: 40, light: 80},
+								{},
+								{color:{alpha: 0.9}}
+							);
 
-					if (found !== -1) {
-						bubblesGraph.drawOne(
-							bubbles[found],
-							context,
-							{saturation: 40, light: 80},
-							{},
-							{color:{alpha: 0.9}}
-						);
+							if(bubbles[found].clickable) {
+								canvas.style.cursor = "pointer";
+							} else {
+								canvas.style.cursor = "default";
+							}
 
-						if(bubbles[found].clickable) {
-							canvas.style.cursor = "pointer";
+							if($attrs.tooltipType === 'arrow') {
+								bubblesGraph.drawBubbleArrowTooltip(context, bubbles[found]);
+							} else if ($attrs.tooltipType === 'caption') {
+								bubblesGraph.drawBubbleCaptionTooltip(context, bubbles[found]);
+							}
 						} else {
 							canvas.style.cursor = "default";
 						}
+					};
 
-						if($attrs.tooltipType === 'arrow') {
-							bubblesGraph.drawBubbleArrowTooltip(context, bubbles[found]);
-						} else if ($attrs.tooltipType === 'caption') {
-							bubblesGraph.drawBubbleCaptionTooltip(context, bubbles[found]);
+					canvas.onclick = function(e) {
+						let rect = this.getBoundingClientRect(),
+							x = e.clientX - rect.left,
+							y = e.clientY - rect.top,
+							found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
+
+						if(found !== -1) {
+							$scope.$parent.$root.$broadcast('bubble_clicked', canvasData.bubbles[found]);
 						}
-					} else {
-						canvas.style.cursor = "default";
-					}
-				};
-
-				canvas.onclick = function(e) {
-					let rect = this.getBoundingClientRect(),
-						x = e.clientX - rect.left,
-						y = e.clientY - rect.top,
-						found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
-
-					if(found !== -1) {
-						$scope.$parent.$root.$broadcast('bubble_clicked', canvasData.bubbles[found]);
-					}
-				};
+					};
+				});
 			}]
 		};
 	})
@@ -206,6 +186,31 @@ angular.module('bubbleGraph', [])
 					width: Math.ceil(width),
 					height: Math.ceil(height)
 				};
+			},
+			normalizeBubbles: function(canvasData, tooltipPosition) {
+				for (let i = 0;i < canvasData.bubbles.length;++i) {
+					canvasData.bubbles[i].x += canvasData.width / 2;
+					canvasData.bubbles[i].y += canvasData.height / 2;
+
+					canvasData.bubbles[i].color = Object.assign({hue: canvasData.bubbles[i].r > 360 ? canvasData.bubbles[i].r - 360 : canvasData.bubbles[i].r, saturation: 80, light: 40, alpha: 0.1}, canvasData.bubbles[i].color);
+					if(!('stroke' in canvasData.bubbles[i])) {
+						canvasData.bubbles[i].stroke = {color: {}};
+					}
+					canvasData.bubbles[i].stroke.color = Object.assign({hue: canvasData.bubbles[i].color.hue, saturation: 60, light: 40, alpha: 1}, canvasData.bubbles[i].stroke.color);
+					canvasData.bubbles[i].stroke = Object.assign({lineWidth: 1}, canvasData.bubbles[i].stroke);
+					canvasData.bubbles[i].text.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, canvasData.bubbles[i].text.color);
+					canvasData.bubbles[i].text = Object.assign({font: '10px sans serif'}, canvasData.bubbles[i].text);
+					canvasData.bubbles[i].tooltip.text.color = Object.assign({hue: 0, saturation: 100, light: 100, alpha: 1}, canvasData.bubbles[i].tooltip.text.color);
+					canvasData.bubbles[i].tooltip.text = Object.assign({font: '10px sans serif'}, canvasData.bubbles[i].tooltip.text);
+					canvasData.bubbles[i].tooltip.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 0.8}, canvasData.bubbles[i].tooltip.color);
+					if(!('stroke' in canvasData.bubbles[i].tooltip)) {
+						canvasData.bubbles[i].tooltip.stroke = {color: {}};
+					}
+					canvasData.bubbles[i].tooltip.stroke.color = Object.assign({hue: 0, saturation: 0, light: 0, alpha: 1}, canvasData.bubbles[i].tooltip.stroke.color);
+					canvasData.bubbles[i].tooltip.stroke = Object.assign({lineWidth: 0}, canvasData.bubbles[i].tooltip.stroke);
+					canvasData.bubbles[i].tooltip = Object.assign({position: 'left'}, {position: tooltipPosition}, canvasData.bubbles[i].tooltip);
+					canvasData.bubbles[i] = Object.assign({clickable: false}, canvasData.bubbles[i]);
+				}
 			},
 			draw: function(bubbles, context, exceptId = null) {
 				for (let i = 0; i < bubbles.length; ++i) {
