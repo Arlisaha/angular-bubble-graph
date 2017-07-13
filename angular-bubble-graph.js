@@ -109,6 +109,7 @@ angular.module('bubbleGraph', [])
 				}
 
 				for (let j = 1; j < data.length; ++j) {
+					l = 0;
 					inCircle = true;
 					/*Either we use random directions, or we set them according to current comparative circle's position*/
 					if (randomize) {
