@@ -11,7 +11,7 @@ For SVG example, see : https://jsfiddle.net/Arlisaha/24f18zqv/41/ (still in prog
 
 ### Fired events
 
-Events 'bubble_clicked' in angular and DOM are dispatched directly from SVG/canvas element.
+Events 'bubble_clicked' in angular and DOM are dispatched directly from SVG/canvas element. Given data is the clicked bubble !
 
 ### Tag's directive
 
@@ -75,6 +75,7 @@ Given data (in "data" attribute), must be an array of object looking like :
       font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
     }, 
 ```
+Considering that this object is returned on click event, you can also add any key/value you need (like an id), it will not be overwritten !
 
 ======================================================================================
 
