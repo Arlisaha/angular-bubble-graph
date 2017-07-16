@@ -67,6 +67,10 @@ angular.module('bubbleGraph', [])
 				svg.setAttributeNS(null,'width',svgData.width);
 				svg.setAttributeNS(null,'height',svgData.height);
 				bubblesGraph.draw(svg, bubbles);
+				
+				svg.addEventListener('bubble_clicked', function(e) {
+					$scope.$parent.$root.$broadcast('bubble_clicked', e.detail);
+				});
 			}]
 		};
 	})
@@ -192,6 +196,7 @@ angular.module('bubbleGraph', [])
 					bubble.x,
 					bubble.y,
 					bubble.r,
+					bubble.clickable,
 					this.getHSL(fill),
 					fill.alpha,
 					this.getHSL(stroke.color),
@@ -205,14 +210,30 @@ angular.module('bubbleGraph', [])
 					bubble.text.lines, 
 					bubble.x, 
 					bubble.y, 
-					2 * bubble.r, 
+					2 * bubble.r,
+					bubble.clickable,
 					text.font.family, 
 					text.font.size, 
 					this.getHSL(text.color),
 					true
 				);
+				
+				this.addEvents(
+					svgElement,
+					circleElement, 
+					textElement, 
+					bubble,
+					this.getHSL(fill),
+					this.getHSL({hue: fill.hue, saturation: fill.saturation / 2, light: fill.light * 2}),
+					fill.alpha,
+					fill.alpha,
+					this.getHSL(stroke.color),
+					this.getHSL(stroke.color),
+					stroke.color.alpha,
+					stroke.color.alpha
+				);
 			},
-			drawCircle: function(svgElement, id, x, y, radius, fillColor, fillOpacity, strokeColor, strokeOpacity, lineWidth) {
+			drawCircle: function(svgElement, id, x, y, radius, clickable, fillColor, fillOpacity, strokeColor, strokeOpacity, lineWidth) {
 				let circle = document.createElementNS(svgElement.namespaceURI, 'circle');
 				
 				circle.setAttributeNS(null, 'id', id);
@@ -224,12 +245,15 @@ angular.module('bubbleGraph', [])
 				circle.setAttributeNS(null, 'stroke', strokeColor);
 				circle.setAttributeNS(null, 'stroke-opacity', strokeOpacity);
 				circle.setAttributeNS(null, 'strokeWidth', lineWidth);
+				if (clickable) {
+					circle.style.cursor = 'pointer';
+				}
 				
 				svgElement.appendChild(circle);
 				
 				return circle;
 			},
-			drawText: function(svgElement, id, textLines, x, y, maxWidth, fontFamily, fontSize, fontColor, alignCenter = false) {
+			drawText: function(svgElement, id, textLines, x, y, maxWidth, clickable, fontFamily, fontSize, fontColor, alignCenter = false) {
 				let text = document.createElementNS(svgElement.namespaceURI, 'text'), 
 					tspan, textBbox, tspanBbox, longestTspanWidth = 0, previousTspanWidthSum = 0, tspanList = [];
 				
@@ -237,6 +261,9 @@ angular.module('bubbleGraph', [])
 				text.setAttributeNS(null, 'font-family', fontFamily);
 				text.setAttributeNS(null, 'font-size', fontSize);
 				text.setAttributeNS(null, 'color', fontColor);
+				if (clickable) {
+					text.style.cursor = 'pointer';
+				}
 				
 				svgElement.appendChild(text);
 
@@ -265,6 +292,40 @@ angular.module('bubbleGraph', [])
 				}
 				
 				return text;
+			},
+			addEvents: function(svgElement, circleElement, textElement, bubble, fill, fillHover, fillOpacity, fillOpacityHover, stroke, strokeHover, strokeOpacity, strokeOpacityHover) {
+				textElement.onmouseover = circleElement.onmouseover = function() {					
+					circleElement.setAttributeNS(null, 'fill', fillHover);
+					circleElement.setAttributeNS(null, 'fill-opacity', fillOpacityHover);
+					circleElement.setAttributeNS(null, 'stroke', strokeHover);
+					circleElement.setAttributeNS(null, 'stroke-opacity', strokeOpacityHover);
+				};
+				
+				textElement.onmouseout = circleElement.onmouseout = function() {
+					circleElement.setAttributeNS(null, 'fill', fill);
+					circleElement.setAttributeNS(null, 'fill-opacity', fillOpacity);
+					circleElement.setAttributeNS(null, 'stroke', stroke);
+					circleElement.setAttributeNS(null, 'stroke-opacity', strokeOpacity);
+				};
+				
+				if(bubble.clickable) {
+					textElement.onclick = function() {
+						svgElement.dispatchEvent(new CustomEvent(
+							'bubble_clicked',
+							{
+								detail: bubble
+							}
+						));
+					};
+					circleElement.onclick = function() {
+						svgElement.dispatchEvent(new CustomEvent(
+							'bubble_clicked',
+							{
+								detail: bubble
+							}
+						));
+					};
+				}
 			},
 			getTextId: function(bubbleId) {
 				return 'text_' + bubbleId;
