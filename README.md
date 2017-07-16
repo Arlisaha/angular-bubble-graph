@@ -73,7 +73,7 @@ Given data (in "data" attribute), must be an array of object looking like :
           alpha: [alpha value in HSLA format]
         },
         font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
-      },
+      }
     }
   }
 ```
