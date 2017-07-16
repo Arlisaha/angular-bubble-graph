@@ -63,17 +63,19 @@ Given data (in "data" attribute), must be an array of object looking like :
       font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
     }, 
     tooltip: {[optional, define tooltip info]
-    position: [optional, default to 'left'],
-    text: { [required if you want tooltips, definitions for the tooltip inner text]
-      lines: [required, array of lines that must be written inside the bubble],
-      color: { [optional]
-        hue: [hue value in HSLA format], 
-        saturation: [saturation value in HSLA format], 
-        light: [light value in HSLA format],
-        alpha: [alpha value in HSLA format]
+      position: [optional, default to 'left'],
+      text: { [required if you want tooltips, definitions for the tooltip inner text]
+        lines: [required, array of lines that must be written inside the bubble],
+        color: { [optional]
+          hue: [hue value in HSLA format], 
+          saturation: [saturation value in HSLA format], 
+          light: [light value in HSLA format],
+          alpha: [alpha value in HSLA format]
+        },
+        font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
       },
-      font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
-    }, 
+    }
+  }
 ```
 Considering that this object is returned on click event, you can also add any key/value you need (like an id), it will not be overwritten !
 
