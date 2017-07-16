@@ -55,55 +55,12 @@ angular.module('bubbleGraph', [])
 				canvas.width = canvasData.width;
 				canvas.height = canvasData.height;
 				bubblesGraph.draw(bubbles, context);
-
-				canvas.onselectstart = function(e) {
-					return false;
-				};
-
-				canvas.onmousemove = function(e) {
-					let rect = this.getBoundingClientRect(),
-						x = e.clientX - rect.left,
-						y = e.clientY - rect.top;
-
-					found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
-					context.clearRect(0, 0, canvas.width, canvas.height);
-					bubblesGraph.draw(bubbles, context, found);
-
-					if (found != -1) {
-						bubblesGraph.drawOne(
-							bubbles[found],
-							context,
-							{saturation: bubbles[found].color.saturation / 2, light: bubbles[found].color.saturation * 2},
-							{},
-							{color:{alpha: 1}}
-						);
-
-						if(bubbles[found].clickable) {
-							canvas.style.cursor = "pointer";
-						} else {
-							canvas.style.cursor = "default";
-						}
-
-						if($attrs.tooltipType === 'arrow') {
-							bubblesGraph.drawBubbleArrowTooltip(context, bubbles[found]);
-						} else if ($attrs.tooltipType === 'caption') {
-							bubblesGraph.drawBubbleCaptionTooltip(context, bubbles[found]);
-						}
-					} else {
-						canvas.style.cursor = "default";
-					}
-				};
-
-				canvas.onclick = function(e) {
-					let rect = this.getBoundingClientRect(),
-						x = e.clientX - rect.left,
-						y = e.clientY - rect.top,
-						found = bubblesGraph.hoveredBubbleId(bubbles, context, x, y);
-
-					if(found !== -1) {
-						$scope.$parent.$root.$broadcast('bubble_clicked', canvasData.bubbles[found]);
-					}
-				};
+				
+				bubblesGraph.addEvents(canvas, context, bubbles, $attrs.tooltipType);
+				
+				canvas.addEventListener('bubble_clicked', function(e) {
+					$scope.$parent.$root.$broadcast('bubble_clicked', e.detail);
+				});
 			}]
 		};
 	})
@@ -505,6 +462,63 @@ angular.module('bubbleGraph', [])
 					context.closePath();
 				}
 				return -1;
+			},
+			addEvents: function(canvas, context, bubbles, tooltipType) {
+				let found = -1, self = this;
+				
+				canvas.onselectstart = function(e) {
+					return false;
+				};
+
+				canvas.onmousemove = function(e) {
+					let rect = this.getBoundingClientRect(),
+						x = e.clientX - rect.left,
+						y = e.clientY - rect.top;
+
+					found = self.hoveredBubbleId(bubbles, context, x, y);
+					context.clearRect(0, 0, canvas.width, canvas.height);
+					self.draw(bubbles, context, found);
+
+					if (found != -1) {
+						self.drawOne(
+							bubbles[found],
+							context,
+							{saturation: bubbles[found].color.saturation / 2, light: bubbles[found].color.saturation * 2},
+							{},
+							{color:{alpha: 1}}
+						);
+
+						if(bubbles[found].clickable) {
+							canvas.style.cursor = "pointer";
+						} else {
+							canvas.style.cursor = "default";
+						}
+
+						if(tooltipType === 'arrow') {
+							self.drawBubbleArrowTooltip(context, bubbles[found]);
+						} else if (tooltipType === 'caption') {
+							self.drawBubbleCaptionTooltip(context, bubbles[found]);
+						}
+					} else {
+						canvas.style.cursor = "default";
+					}
+				};
+
+				canvas.onclick = function(e) {
+					let rect = this.getBoundingClientRect(),
+						x = e.clientX - rect.left,
+						y = e.clientY - rect.top,
+						found = self.hoveredBubbleId(bubbles, context, x, y);
+
+					if(found !== -1) {
+						canvas.dispatchEvent(new CustomEvent(
+							'bubble_clicked',
+							{
+								detail: bubbles[found]
+							}
+						));
+					}
+				};
 			},
 			getHSLA: function(colorObject) {
 				return 'hsla(' + colorObject.hue + ', ' + colorObject.saturation + '%, ' + colorObject.light +'%, ' + colorObject.alpha +')';
