@@ -179,34 +179,36 @@ angular.module('bubbleGraph', [])
 				}
 			},
 			drawOne: function(svgElement, bubble, fill = {}, stroke = {}, text = {}) {
+				let circleElement, textElement;
 				fill = Object.assign({}, bubble.color, fill);
 				stroke.color = Object.assign({}, bubble.stroke.color, stroke.color);
 				stroke = Object.assign({}, bubble.stroke, stroke);
 				text.color = Object.assign({}, bubble.text.color, text.color);
 				text.font = Object.assign({}, bubble.text.font, text.font);
 				
-				this.drawCircle(
+				circleElement = this.drawCircle(
 					svgElement,
-					bubble.id,
+					this.getCircleId(bubble.id),
 					bubble.x,
 					bubble.y,
 					bubble.r,
-					'hsl(' + fill.hue + ',' + fill.saturation + '%,' + fill.light + '%)',
-					 fill.alpha,
-					'hsl(' + stroke.color.hue + ',' + stroke.color.saturation + '%,' + stroke.color.light + '%)',
+					this.getHSL(fill),
+					fill.alpha,
+					this.getHSL(stroke.color),
 					stroke.color.alpha,
-					stroke.lineWidth + 'px'
+					stroke.lineWidth + 'px'					
 				);
 				
-				this.drawText(
-					svgElement, 
+				textElement = this.drawText(
+					svgElement,
+					this.getTextId(bubble.id),
 					bubble.text.lines, 
 					bubble.x, 
 					bubble.y, 
 					2 * bubble.r, 
 					text.font.family, 
 					text.font.size, 
-					'hsl(' + text.color.hue + ',' + text.color.saturation + '%,' + text.color.light + '%)',
+					this.getHSL(text.color),
 					true
 				);
 			},
@@ -218,17 +220,20 @@ angular.module('bubbleGraph', [])
 				circle.setAttributeNS(null, 'cy', y);
 				circle.setAttributeNS(null, 'r', radius);
 				circle.setAttributeNS(null, 'fill', fillColor);
-				circle.setAttributeNS(null, 'fill-opacity', fillOpacity)
+				circle.setAttributeNS(null, 'fill-opacity', fillOpacity);
 				circle.setAttributeNS(null, 'stroke', strokeColor);
 				circle.setAttributeNS(null, 'stroke-opacity', strokeOpacity);
 				circle.setAttributeNS(null, 'strokeWidth', lineWidth);
 				
 				svgElement.appendChild(circle);
+				
+				return circle;
 			},
-			drawText: function(svgElement, textLines, x, y, maxWidth, fontFamily, fontSize, fontColor, alignCenter = false) {
+			drawText: function(svgElement, id, textLines, x, y, maxWidth, fontFamily, fontSize, fontColor, alignCenter = false) {
 				let text = document.createElementNS(svgElement.namespaceURI, 'text'), 
 					tspan, textBbox, tspanBbox, longestTspanWidth = 0, previousTspanWidthSum = 0, tspanList = [];
 				
+				text.setAttributeNS(null, 'id', id);
 				text.setAttributeNS(null, 'font-family', fontFamily);
 				text.setAttributeNS(null, 'font-size', fontSize);
 				text.setAttributeNS(null, 'color', fontColor);
@@ -252,12 +257,23 @@ angular.module('bubbleGraph', [])
 				
 				if (textBbox.width < maxWidth) {
 					text.setAttributeNS(null, 'x', x - textBbox.width / 2);
-					text.setAttributeNS(null, 'y', y + textLines.length);
+					text.setAttributeNS(null, 'y', y + (textLines.length === 1 ? textBbox.height / 3 : 0));
 
 					svgElement.appendChild(text);
 				} else {
 					svgElement.removeChild(text);
 				}
+				
+				return text;
+			},
+			getTextId: function(bubbleId) {
+				return 'text_' + bubbleId;
+			},
+			getCircleId: function(bubbleId) {
+				return 'circle_' + bubbleId;
+			},
+			getHSL: function(colorObject) {
+				return 'hsl(' + colorObject.hue +',' + colorObject.saturation + '%,' + colorObject.light +'%)';
 			}
 		};
 	});
