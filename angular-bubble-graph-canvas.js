@@ -73,9 +73,9 @@ angular.module('bubbleGraph', [])
 						bubblesGraph.drawOne(
 							bubbles[found],
 							context,
-							{saturation: 40, light: 80}, 
+							{saturation: bubbles[found].color.saturation / 2, light: bubbles[found].color.saturation * 2},
 							{},
-							{color:{alpha: 0.9}}
+							{color:{alpha: 1}}
 						);
 
 						if(bubbles[found].clickable) {
