@@ -36,7 +36,7 @@ Given data (in "data" attribute), must be an array of object looking like :
     x: [optional, value will be calculated and added to the object no matter what], 
     y: [optional, value will be calculated and added to the object no matter what], 
     r: [required, the radius of the bubble],
-    clickable: [optional (default false), does the bubble must fire a 'bubble_clicked' event ?],
+    clickable: [optional (default false), does the bubble must fire a "bubble_clicked" event ?],
     color: { [optional, bubble fill color]
       hue: [hue value in HSLA format], 
       saturation: [saturation value in HSLA format], 
@@ -44,7 +44,7 @@ Given data (in "data" attribute), must be an array of object looking like :
       alpha: [alpha value in HSLA format]
     },
     stroke: { [optional, bubble stroke linewidth and color]
-      lineWidth: [stroke's width in pixels (float)],
+      lineWidth: [stroke width in pixels (float)],
       color: { [optional, bubble fill color]
         hue: [hue value in HSLA format], 
         saturation: [saturation value in HSLA format], 
@@ -62,7 +62,7 @@ Given data (in "data" attribute), must be an array of object looking like :
       },
       font: [optional, in canvas, this value muste look like "10px 'sans serif'" when in SVG it must be an object like "{size: 10, family: 'sans serif'}"]
     }, 
-    tooltip: {[optional, define tooltip's info]
+    tooltip: {[optional, define tooltip info]
     position: [optional, default to 'left'],
     text: { [required if you want tooltips, definitions for the tooltip inner text]
       lines: [required, array of lines that must be written inside the bubble],
@@ -76,6 +76,6 @@ Given data (in "data" attribute), must be an array of object looking like :
     }, 
 ```
 
-===========================================================================================================
+======================================================================================
 
 You don't use AngularJS, you  can still easily extract logic from angular directive wrapping !
