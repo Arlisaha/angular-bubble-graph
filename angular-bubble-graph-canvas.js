@@ -260,7 +260,7 @@ angular.module('bubbleGraph', [])
 					context,
 					bubble.tooltip.text.lines,
 					x + tooltipWidth / 2,
-					y + tooltipHeight / 2,
+					y + tooltipHeight / (bubble.tooltip.text.lines.length + 1),
 					tooltipWidth,
 					bubble.tooltip.text.font,
 					this.getHSLA(bubble.tooltip.text.color),
