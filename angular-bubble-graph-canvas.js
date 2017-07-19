@@ -54,9 +54,9 @@ angular.module('bubbleGraph', [])
 
 				canvas.width = canvasData.width;
 				canvas.height = canvasData.height;
-				bubblesGraph.draw(bubbles, context);
+				bubblesGraph.draw(bubbles, context, $attrs.clipText != null);
 				
-				bubblesGraph.addEvents(canvas, context, bubbles, $attrs.tooltipType);
+				bubblesGraph.addEvents(canvas, context, bubbles, $attrs.tooltipType, $attrs.clipText != null);
 				
 				canvas.addEventListener('bubble_clicked', function(e) {
 					$scope.$parent.$root.$broadcast('bubble_clicked', e.detail);
@@ -165,14 +165,14 @@ angular.module('bubbleGraph', [])
 					height: Math.ceil(height)
 				};
 			},
-			draw: function(bubbles, context, exceptId = null) {
+			draw: function(bubbles, context, clipText, exceptId = null) {
 				for (let i = 0; i < bubbles.length; ++i) {
 					if(i !== exceptId) {
-						this.drawOne(bubbles[i], context);
+						this.drawOne(bubbles[i], context, clipText);
 					}
 				}
 			},
-			drawOne: function(bubble, context, fill = {}, stroke = {}, text = {}) {
+			drawOne: function(bubble, context, clipText, fill = {}, stroke = {}, text = {}) {
 				fill = Object.assign({}, bubble.color, fill);
 				stroke.color = Object.assign({}, bubble.stroke.color, stroke.color);
 				stroke = Object.assign({}, bubble.stroke, stroke);
@@ -197,7 +197,8 @@ angular.module('bubbleGraph', [])
 					2 * bubble.r,
 					text.font,
 					this.getHSLA(text.color),
-					true
+					true,
+					clipText
 				);
 			},
 			drawBubbleCaptionTooltip: function(context, bubble) {
@@ -262,7 +263,9 @@ angular.module('bubbleGraph', [])
 					y + tooltipHeight / 2,
 					tooltipWidth,
 					bubble.tooltip.text.font,
-					this.getHSLA(bubble.tooltip.text.color)
+					this.getHSLA(bubble.tooltip.text.color),
+					false,
+					false
 				);
 			},
 			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
@@ -343,7 +346,9 @@ angular.module('bubbleGraph', [])
 					y + tooltipHeight / 2 - textHeight / 2,
 					tooltipWidth,
 					bubble.tooltip.text.font,
-					this.getHSLA(bubble.tooltip.text.color)
+					this.getHSLA(bubble.tooltip.text.color),
+					false,
+					false
 				);
 			},
 			drawCircle: function(context, x, y, radius, fillStyle, strokeStyle, lineWidth) {
@@ -356,15 +361,28 @@ angular.module('bubbleGraph', [])
 				context.stroke();
 				context.closePath();
 			},
-			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false) {
+			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false, clipText = false) {
 				let textWidth, textHeight, lines = [];
 
 				context.font = font;
 
+				if (clipText) {
+					context.save();
+					context.beginPath();
+					context.arc(x, y, (maxWidth / 2) - 5, 0, 2 * Math.PI, false);
+					context.clip();					
+				}
+				
 				for(let k = 0; k < textLines.length;++k) {
 					textWidth = context.measureText(textLines[k]).width;
-					if (textWidth < maxWidth) {
-						lines.push(textLines[k]);
+					if (clipText) {
+						if(maxWidth > textWidth / 3) {
+							lines.push(textLines[k]);
+						}
+					} else {
+						if (textWidth < maxWidth) {
+							lines.push(textLines[k]);
+						}
 					}
 				}
 
@@ -382,6 +400,9 @@ angular.module('bubbleGraph', [])
 				for(let j = 0; j < lines.length;++j) {
 					if(alignCenter) {
 						textWidth = context.measureText(lines[j]).width;
+						if (clipText && textWidth >= maxWidth) {
+							textWidth = maxWidth - 10;
+						}
 					}
 					context.beginPath();
 					context.fillStyle = style;
@@ -391,6 +412,10 @@ angular.module('bubbleGraph', [])
 						y + (textHeight / 2) + (j * (textHeight + 3)) - (lines.length > 1 && alignCenter ? lines.length * (textHeight - 3) / 2 : 0)
 					);
 					context.closePath();
+				}
+				
+				if (clipText) {
+					context.restore();
 				}
 			},
 			drawTooltipBox: function(context, x, y, width, height, radius = 5, fill, strokeLineWidth, strokeStyle, arrowPosition, arrowHeight) {
@@ -463,7 +488,7 @@ angular.module('bubbleGraph', [])
 				}
 				return -1;
 			},
-			addEvents: function(canvas, context, bubbles, tooltipType) {
+			addEvents: function(canvas, context, bubbles, tooltipType, clipText) {
 				let found = -1, self = this;
 				
 				canvas.onselectstart = function(e) {
@@ -477,12 +502,13 @@ angular.module('bubbleGraph', [])
 
 					found = self.hoveredBubbleId(bubbles, context, x, y);
 					context.clearRect(0, 0, canvas.width, canvas.height);
-					self.draw(bubbles, context, found);
+					self.draw(bubbles, context, clipText, found);
 
 					if (found != -1) {
 						self.drawOne(
 							bubbles[found],
 							context,
+							clipText,
 							{saturation: bubbles[found].color.saturation / 2, light: bubbles[found].color.saturation * 2},
 							{},
 							{color:{alpha: 1}}
