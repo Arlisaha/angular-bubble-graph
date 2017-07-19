@@ -3,7 +3,7 @@ Allow to make a bubble chart with some options.
 
 ## Examples
 
-For Canvas example, see : https://jsfiddle.net/Arlisaha/h1amkaf8/41/
+For Canvas example, see : https://jsfiddle.net/Arlisaha/h1amkaf8/42/
 
 For SVG example, see : https://jsfiddle.net/Arlisaha/24f18zqv/41/ (still in progress ! Lacks of tooltips)
 
@@ -21,13 +21,14 @@ To use it, you just need to add a tag with different attributes :
 <bubbles id="TagId" width="Width" height="Height" data="ControllerData" [randomize] [orientation="h"] [sort="desc"] [fixed-width] [tooltip-type="arrow"] [tooltip-position="top"]></bubbles>
 ```
 
-* randomize : give random direction when generating bubbles coordinates
-* orientation [h|v] : restrain area where bubbles will be if it is possible
-* sort [asc|desc] : sort bubbles according to their radius (desc = biggest in the center, asc = smallest in the center)
-* [fixed-width/fixed-height] : the algorithm increase height and width in order to fit content, if one or the two are given, then the matching parameter will remain the same as given in the tag attribute's.
-* tooltip-type [arrow|caption] : define the type of tooltip you want to use, 'arrow' stand for a tooltip appearing against the bubble with a small arrow pointing at it, and 'caption' stands for a tooltip appearing around the canvas as an image caption. WARNING, if no valid value given, then no tooltip will be displayed.
-* tooltip-position [[top|left|bottom|right]|[top-left|top|top-right|right|bottom-right|bottom|bottom-left|left]] : precise the position of the tooltip. Arrow tooltip position's are given in first, and caption in the second array. If the tooltip will be cut by the edge of the Canvas/SVG element, then its position will be the opposite of the given one. Tooltip position can also be given one by one inside data definitions.
-* granularity : the number of subdivisions to draw around a bubble in order to place the others. Default is 512.
+* **randomize** : give random direction when generating bubbles coordinates
+* **orientation [h|v]** : restrain area where bubbles will be if it is possible
+* **sort [asc|desc]** : sort bubbles according to their radius (desc = biggest in the center, asc = smallest in the center)
+* **[fixed-width/fixed-height]** : the algorithm increase height and width in order to fit content, if one or the two are given, then the matching parameter will remain the same as given in the tag attribute's.
+* **tooltip-type [arrow|caption]** : define the type of tooltip you want to use, 'arrow' stand for a tooltip appearing against the bubble with a small arrow pointing at it, and 'caption' stands for a tooltip appearing around the canvas as an image caption. WARNING, if no valid value given, then no tooltip will be displayed.
+* **tooltip-position [[top|left|bottom|right]|[top-left|top|top-right|right|bottom-right|bottom|bottom-left|left]]** : precise the position of the tooltip. Arrow tooltip position's are given in first, and caption in the second array. If the tooltip will be cut by the edge of the Canvas/SVG element, then its position will be the opposite of the given one. Tooltip position can also be given one by one inside data definitions.
+* **granularity** : the number of subdivisions to draw around a bubble in order to place the others. Default is 512.
+* **clip-text** : **ONLY FOR CANVAS**, if set to true, text lines longer than the bubble diameter will be displayed but cut at the diameter length (clip the text in a circle with the same center but a slightly smaller radius).
 
 ### Data format
 
