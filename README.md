@@ -28,7 +28,7 @@ To use it, you just need to add a tag with different attributes :
 * **tooltip-type [arrow|caption]** : define the type of tooltip you want to use, 'arrow' stand for a tooltip appearing against the bubble with a small arrow pointing at it, and 'caption' stands for a tooltip appearing around the canvas as an image caption. WARNING, if no valid value given, then no tooltip will be displayed.
 * **tooltip-position [[top|left|bottom|right]|[top-left|top|top-right|right|bottom-right|bottom|bottom-left|left]]** : precise the position of the tooltip. Arrow tooltip position's are given in first, and caption in the second array. If the tooltip will be cut by the edge of the Canvas/SVG element, then its position will be the opposite of the given one. Tooltip position can also be given one by one inside data definitions.
 * **granularity** : the number of subdivisions to draw around a bubble in order to place the others. Default is 512.
-* **clip-text** : **ONLY FOR CANVAS**, if set to true, text lines longer than the bubble diameter will be displayed but cut at the diameter length (clip the text in a circle with the same center but a slightly smaller radius).
+* **clip-text** : **ONLY FOR CANVAS**, if set, text lines longer than the bubble diameter will be displayed but cut at the diameter length (clip the text in a circle with the same center but a slightly smaller radius).
 
 ### Data format
 
