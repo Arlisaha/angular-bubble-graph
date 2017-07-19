@@ -18,7 +18,7 @@ Events 'bubble_clicked' in angular and DOM are dispatched directly from SVG/canv
 This module allow you to create a bubble graph either in Canvas or SVG with tooltips and events triggering on click.
 To use it, you just need to add a tag with different attributes : 
 ```html
-<bubbles id="TagId" width="Width" height="Height" data="ControllerData" [randomize] [orientation="h"] [sort="desc"] [fixed-width] [tooltip-type="arrow"] [tooltip-position="top"]></bubbles>
+<bubbles id="TagId" width="Width" height="Height" data="ControllerData" [randomize] [clip-text] [orientation="h"] [sort="desc"] [fixed-width] [tooltip-type="arrow"] [tooltip-position="top"]></bubbles>
 ```
 
 * **randomize** : give random direction when generating bubbles coordinates
