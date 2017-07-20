@@ -396,7 +396,7 @@ angular.module('bubbleGraph', [])
 				context.closePath();
 			},
 			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false, clipText = false) {
-				let textWidth, textHeight, lines = [], clipTextPadding = 2, stopClipping = false;
+				let textWidth, textHeight, lines = [], clipTextPadding = 2;
 
 				context.font = font;
 
@@ -410,8 +410,7 @@ angular.module('bubbleGraph', [])
 				for (let k = 0; k < textLines.length; ++k) {
 					textWidth = context.measureText(textLines[k]).width;
 					if (clipText) {
-						stopClipping = textWidth > maxWidth;
-						if (maxWidth >= 10 && !(stopClipping && k >= 1)) {
+						if (maxWidth >= 10) {
 							lines.push(textLines[k]);
 						}
 					} else {
