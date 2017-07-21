@@ -302,7 +302,7 @@ angular.module('bubbleGraph', [])
 				);
 			},
 			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
-				let x, y, arrowPosition, tooltipWidth = 0,
+				let x, y, arrowPosition, tooltipWidth = 0, unplaced = true,
 					textHeight = bubble.tooltip.text.lines.length > 1 ? context.measureText('M').width * (bubble.tooltip.text.lines.length) : 0,
 					tooltipHeight = context.measureText('M').width * (bubble.tooltip.text.lines.length + 3);
 
@@ -312,51 +312,61 @@ angular.module('bubbleGraph', [])
 					}
 				}
 
-				switch (bubble.tooltip.position) {
-					case 'bottom':
-						x = bubble.x - tooltipWidth / 2;
-						y = bubble.y + bubble.r + arrowHeight;
-						if (y + tooltipHeight > context.canvas.height) {
-							x = bubble.x - tooltipWidth / 2;
-							y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
-							arrowPosition = 'bottom';
-						} else {
-							arrowPosition = 'top';
-						}
-						break;
-					case 'left':
-						x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
-						y = bubble.y - (tooltipHeight / 2);
-						if (x < 0) {
-							x = bubble.x + bubble.r + arrowHeight;
-							y = bubble.y - (tooltipHeight / 2);
-							arrowPosition = 'left';
-						} else {
-							arrowPosition = 'right';
-						}
-						break;
-					case 'top':
-						x = bubble.x - tooltipWidth / 2;
-						y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
-						if (y < 0) {
+				while (unplaced) {
+					switch (bubble.tooltip.position) {
+						case 'bottom':
 							x = bubble.x - tooltipWidth / 2;
 							y = bubble.y + bubble.r + arrowHeight;
-							arrowPosition = 'top';
-						} else {
-							arrowPosition = 'bottom';
-						}
-						break;
-					case 'right':
-						x = bubble.x + bubble.r + arrowHeight;
-						y = bubble.y - (tooltipHeight / 2);
-						if (x + tooltipWidth > context.canvas.width) {
+							if (y + tooltipHeight > context.canvas.height) {
+								bubble.tooltip.position = 'top';
+							} else if (x < 0) {
+								bubble.tooltip.position = 'right';
+							} else if (x + tooltipWidth > context.canvas.width) {
+								bubble.tooltip.position = 'left';
+							} else {
+								unplaced = false;
+								arrowPosition = 'top';
+							}
+							break;
+						case 'left':
 							x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
 							y = bubble.y - (tooltipHeight / 2);
-							arrowPosition = 'right';
-						} else {
-							arrowPosition = 'left';
-						}
-						break;
+							if (x < 0) {
+								bubble.tooltip.position = 'right';
+							} else if (y + tooltipHeight > context.canvas.height) {
+								bubble.tooltip.position = 'top';
+							} else if (y < 0) {
+								bubble.tooltip.position = 'bottom';
+							} else {
+								unplaced = false;
+								arrowPosition = 'right';
+							}
+							break;
+						case 'top':
+							x = bubble.x - tooltipWidth / 2;
+							y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
+							if (y < 0) {
+								bubble.tooltip.position = 'bottom';
+							} else {
+								unplaced = false;
+								arrowPosition = 'bottom';
+							}
+							break;
+						case 'right':
+							x = bubble.x + bubble.r + arrowHeight;
+							y = bubble.y - (tooltipHeight / 2);
+							if (x + tooltipWidth > context.canvas.width) {
+								bubble.tooltip.position = 'left';
+							} else if (y + tooltipHeight > context.canvas.height) {
+								bubble.tooltip.position = 'top';
+							} else if (y < 0) {
+								bubble.tooltip.position = 'bottom';
+							} else {
+								unplaced = false;
+								arrowPosition = 'left';
+							}
+							break;
+					}
 				}
 
 				this.drawTooltipBox(
