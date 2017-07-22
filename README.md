@@ -3,7 +3,7 @@ Allow to make a bubble chart with some options.
 
 ## Examples
 
-For Canvas example, see : https://jsfiddle.net/Arlisaha/h1amkaf8/45/
+For Canvas example, see : https://jsfiddle.net/Arlisaha/h1amkaf8/48/
 
 For SVG example, see : https://jsfiddle.net/Arlisaha/24f18zqv/41/ (still in progress ! Lacks of tooltips and text clipping)
 
