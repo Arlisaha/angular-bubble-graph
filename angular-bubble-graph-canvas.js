@@ -324,7 +324,7 @@ angular.module('bubbleGraph', [])
 					switch (bubble.tooltip.position) {
 						case 'bottom':
 							x = bubble.x - tooltipWidth / 2;
-							y = bubble.y + bubble.r + arrowHeight;
+							y = bubble.y + bubble.r + bubble.stroke.lineWidth - 1 + arrowHeight;
 							if (y + tooltipHeight > context.canvas.height) {
 								bubble.tooltip.position = 'top';
 							} else if (x < 0) {
@@ -337,7 +337,7 @@ angular.module('bubbleGraph', [])
 							}
 							break;
 						case 'left':
-							x = bubble.x - bubble.r - arrowHeight - tooltipWidth;
+							x = bubble.x - bubble.r - bubble.stroke.lineWidth + 1 - arrowHeight - tooltipWidth;
 							y = bubble.y - (tooltipHeight / 2);
 							if (x < 0) {
 								bubble.tooltip.position = 'right';
@@ -352,7 +352,7 @@ angular.module('bubbleGraph', [])
 							break;
 						case 'top':
 							x = bubble.x - tooltipWidth / 2;
-							y = bubble.y - bubble.r - arrowHeight - tooltipHeight;
+							y = bubble.y - bubble.r - bubble.stroke.lineWidth + 1 - arrowHeight - tooltipHeight;
 							if (y < 0) {
 								bubble.tooltip.position = 'bottom';
 							} else {
@@ -361,7 +361,7 @@ angular.module('bubbleGraph', [])
 							}
 							break;
 						case 'right':
-							x = bubble.x + bubble.r + arrowHeight;
+							x = bubble.x + bubble.r + bubble.stroke.lineWidth - 1 + arrowHeight;
 							y = bubble.y - (tooltipHeight / 2);
 							if (x + tooltipWidth > context.canvas.width) {
 								bubble.tooltip.position = 'left';
