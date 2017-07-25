@@ -12,6 +12,8 @@ angular.module('bubbleGraph', [])
 				data: '=data'
 			},
 			controller: ['$scope', '$attrs', 'bubblesGraph', function($scope, $attrs, bubblesGraph) {
+				$scope.data = bubblesGraph.normalizeData($scope.data, $attrs.tooltipPosition);
+
 				let canvas = document.querySelector('#' + $attrs.id),
 					context = canvas.getContext('2d'),
 					canvasData = bubblesGraph.definePositions(
@@ -25,7 +27,7 @@ angular.module('bubbleGraph', [])
 						$attrs.fixedHeight != null,
 						$attrs.granularity != null ? $attrs.granularity : 512
 					),
-					bubbles = bubblesGraph.normalizeBubbles(canvasData.bubbles, canvasData.width, canvasData.height, $attrs.tooltipPosition);
+					bubbles = bubblesGraph.normalizeBubbles(canvasData.bubbles, canvasData.width, canvasData.height);
 
 				canvas.width = canvasData.width;
 				canvas.height = canvasData.height;
@@ -86,11 +88,12 @@ angular.module('bubbleGraph', [])
 
 					while (inCircle) {
 						inCircle = false;
+						noRestriction = false;
 						do {
 							invalidAngle = false;
 							t = Math.PI * (k / granularity) * directionY + directionX;
-							data[j].x = data[l].x + (data[l].r + data[j].r) * Math.cos(t);
-							data[j].y = data[l].y + (data[l].r + data[j].r) * Math.sin(t);
+							data[j].x = data[l].x + (data[l].r + data[l].stroke.lineWidth - 1 + data[j].r + data[j].stroke.lineWidth - 1) * Math.cos(t);
+							data[j].y = data[l].y + (data[l].r + data[l].stroke.lineWidth - 1 + data[j].r + data[j].stroke.lineWidth - 1) * Math.sin(t);
 
 							if (!noRestriction && Math.floor(data[l].y) !== 0 && restrictOrientation === 'h') {
 								invalidAngle = (Math.abs(t) > Math.abs(Math.PI / 4) && Math.abs(t) < Math.abs((3 * Math.PI) / 4)) || (Math.abs(t) > Math.abs((5 * Math.PI) / 4) && Math.abs(t) < Math.abs(7 * Math.PI / 4));
@@ -113,7 +116,7 @@ angular.module('bubbleGraph', [])
 						/*Check wether the current point is not in another circle (whom radius has been added to current circle to avoid colliding)*/
 						for (let m = 0; m < data.length; ++m) {
 							if (m !== j) {
-								inCircle = Math.pow(data[j].x - data[m].x, 2) + Math.pow(data[j].y - data[m].y, 2) < Math.pow(data[m].r + data[j].r, 2);
+								inCircle = Math.pow(data[j].x - data[m].x, 2) + Math.pow(data[j].y - data[m].y, 2) < Math.pow(data[m].r + data[m].stroke.lineWidth - 1 + data[j].r + data[j].stroke.lineWidth - 1, 2);
 								if (inCircle) {
 									break;
 								}
@@ -124,13 +127,13 @@ angular.module('bubbleGraph', [])
 
 				if (!fixedHeight) {
 					for (let i = 0; i < data.length; ++i) {
-						height += Math.abs(data[i].y) + 3 + data[i].r >= height / 2 ? Math.abs(Math.abs(data[i].y) + 3 + data[i].r - (height / 2)) + 5 : 0;
+						height += Math.abs(data[i].y) + 3 + data[i].r + data[i].stroke.lineWidth >= height / 2 ? Math.abs(Math.abs(data[i].y) + 3 + data[i].r + data[i].stroke.lineWidth - (height / 2)) + 5 : 0;
 					}
 				}
 
 				if (!fixedWidth) {
 					for (let i = 0; i < data.length; ++i) {
-						width += Math.abs(data[i].x) + 3 + data[i].r >= width / 2 ? Math.abs(Math.abs(data[i].x) + 3 + data[i].r - (width / 2)) + 5 : 0;
+						width += Math.abs(data[i].x) + 3 + data[i].r + data[i].stroke.lineWidth >= width / 2 ? Math.abs(Math.abs(data[i].x) + 3 + data[i].r + data[i].stroke.lineWidth - (width / 2)) + 5 : 0;
 					}
 				}
 
@@ -140,59 +143,64 @@ angular.module('bubbleGraph', [])
 					height: Math.ceil(height)
 				};
 			},
-			normalizeBubbles: function(bubbles, canvasWidth, canvasHeight, tooltipPosition = 'left') {
-				for (let i = 0; i < bubbles.length; ++i) {
-					bubbles[i].x += canvasWidth / 2;
-					bubbles[i].y += canvasHeight / 2;
-
-					bubbles[i].color = Object.assign({
-						hue: bubbles[i].r > 360 ? bubbles[i].r - 360 : bubbles[i].r,
+			normalizeData: function(data, tooltipPosition = 'left') {
+				for (let i = 0; i < data.length; ++i) {
+					data[i].color = Object.assign({
+						hue: data[i].r > 360 ? data[i].r - 360 : data[i].r,
 						saturation: 80,
 						light: 40,
 						alpha: 0.1
-					}, bubbles[i].color);
-					if (!('stroke' in bubbles[i])) {
-						bubbles[i].stroke = {color: {}};
+					}, data[i].color);
+					if (!('stroke' in data[i])) {
+						data[i].stroke = {color: {}};
 					}
-					bubbles[i].stroke.color = Object.assign({
-						hue: bubbles[i].color.hue,
+					data[i].stroke.color = Object.assign({
+						hue: data[i].color.hue,
 						saturation: 60,
 						light: 40,
 						alpha: 1
-					}, bubbles[i].stroke.color);
-					bubbles[i].stroke = Object.assign({lineWidth: 1}, bubbles[i].stroke);
-					bubbles[i].text.color = Object.assign({
+					}, data[i].stroke.color);
+					data[i].stroke = Object.assign({lineWidth: 1}, data[i].stroke);
+					data[i].text.color = Object.assign({
 						hue: 0,
 						saturation: 0,
 						light: 0,
 						alpha: 1
-					}, bubbles[i].text.color);
-					bubbles[i].text = Object.assign({font: '10px sans serif'}, bubbles[i].text);
-					bubbles[i].tooltip.text.color = Object.assign({
+					}, data[i].text.color);
+					data[i].text = Object.assign({font: '10px sans serif'}, data[i].text);
+					data[i].tooltip.text.color = Object.assign({
 						hue: 0,
 						saturation: 100,
 						light: 100,
 						alpha: 1
-					}, bubbles[i].tooltip.text.color);
-					bubbles[i].tooltip.text = Object.assign({font: '10px sans serif'}, bubbles[i].tooltip.text);
-					bubbles[i].tooltip.color = Object.assign({
+					}, data[i].tooltip.text.color);
+					data[i].tooltip.text = Object.assign({font: '10px sans serif'}, data[i].tooltip.text);
+					data[i].tooltip.color = Object.assign({
 						hue: 0,
 						saturation: 0,
 						light: 0,
 						alpha: 0.8
-					}, bubbles[i].tooltip.color);
-					if (!('stroke' in bubbles[i].tooltip)) {
-						bubbles[i].tooltip.stroke = {color: {}};
+					}, data[i].tooltip.color);
+					if (!('stroke' in data[i].tooltip)) {
+						data[i].tooltip.stroke = {color: {}};
 					}
-					bubbles[i].tooltip.stroke.color = Object.assign({
+					data[i].tooltip.stroke.color = Object.assign({
 						hue: 0,
 						saturation: 0,
 						light: 0,
 						alpha: 1
-					}, bubbles[i].tooltip.stroke.color);
-					bubbles[i].tooltip.stroke = Object.assign({lineWidth: 0}, bubbles[i].tooltip.stroke);
-					bubbles[i].tooltip = Object.assign({position: tooltipPosition}, bubbles[i].tooltip);
-					bubbles[i] = Object.assign({clickable: false}, bubbles[i]);
+					}, data[i].tooltip.stroke.color);
+					data[i].tooltip.stroke = Object.assign({lineWidth: 0}, data[i].tooltip.stroke);
+					data[i].tooltip = Object.assign({position: tooltipPosition}, data[i].tooltip);
+					data[i] = Object.assign({clickable: false}, data[i]);
+				}
+
+				return data;
+			},
+			normalizeBubbles: function(bubbles, canvasWidth, canvasHeight) {
+				for (let i = 0; i < bubbles.length; ++i) {
+					bubbles[i].x += canvasWidth / 2;
+					bubbles[i].y += canvasHeight / 2;
 				}
 
 				return bubbles;
@@ -406,7 +414,7 @@ angular.module('bubbleGraph', [])
 				context.closePath();
 			},
 			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false, clipText = false) {
-				let textWidth, textHeight, lines = [], clipTextPadding = 2;
+				let textWidth, textHeight, lines = [], clipTextPadding = 2, stopClipping = false;
 
 				context.font = font;
 
@@ -420,7 +428,8 @@ angular.module('bubbleGraph', [])
 				for (let k = 0; k < textLines.length; ++k) {
 					textWidth = context.measureText(textLines[k]).width;
 					if (clipText) {
-						if (maxWidth >= 10) {
+						stopClipping = textWidth > maxWidth;
+						if (maxWidth >= 10 && !(stopClipping && k >= 1)) {
 							lines.push(textLines[k]);
 						}
 					} else {
