@@ -413,64 +413,66 @@ angular.module('bubbleGraph', [])
 				context.stroke();
 				context.closePath();
 			},
-			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false, clipText = false) {
-				let textWidth, textHeight, lines = [], clipTextPadding = 2, stopClipping = false;
-
-				context.font = font;
-
-				if (clipText) {
-					context.save();
-					context.beginPath();
-					context.arc(x, y, (maxWidth / 2) - clipTextPadding, 0, 2 * Math.PI, false);
-					context.clip();
-				}
-
-				for (let k = 0; k < textLines.length; ++k) {
-					textWidth = context.measureText(textLines[k]).width;
-					if (clipText) {
-						stopClipping = textWidth > maxWidth;
-						if (maxWidth >= 10 && !(stopClipping && k >= 1)) {
-							lines.push(textLines[k]);
-						}
-					} else {
-						if (textWidth < maxWidth) {
-							lines.push(textLines[k]);
-						}
-					}
-				}
-
-				textWidth = 0;
-				textHeight = context.measureText('M').width;
-
-				if (!alignCenter) {
-					for (let i = 0; i < lines.length; ++i) {
-						if (context.measureText(lines[i]).width > textWidth) {
-							textWidth = context.measureText(lines[i]).width;
-						}
-					}
-				}
-
-				for (let j = 0; j < lines.length; ++j) {
-					if (alignCenter) {
-						textWidth = context.measureText(lines[j]).width;
-						if (clipText && textWidth >= maxWidth) {
-							textWidth = maxWidth - (clipTextPadding * 2);
-						}
-					}
-					context.beginPath();
-					context.fillStyle = style;
-					context.fillText(
-						lines[j],
-						x - textWidth / 2,
-						y + (textHeight / 2) + (j * (textHeight + 3)) - (lines.length > 1 && alignCenter ? lines.length * (textHeight - 3) / 2 : 0)
-					);
-					context.closePath();
-				}
-
-				if (clipText) {
-					context.restore();
-				}
-			},
+  			drawText: function(context, textLines, x, y, maxWidth, font, style, alignCenter = false, clipText = false) {
+ -				let textWidth, textHeight, lines = [], clipTextPadding = 2;
+ +				let textWidth, textHeight, lines = [], clipTextPadding = 2, stopClipping = false;
+  
+  				context.font = font;
+  
+ 				if (clipText) {
+ 					context.save();
+ 					context.beginPath();
+ 					context.arc(x, y, (maxWidth / 2) - clipTextPadding, 0, 2 * Math.PI, false);
+ 					context.clip();
+ 				}
+ 
+  				for (let k = 0; k < textLines.length; ++k) {
+  					textWidth = context.measureText(textLines[k]).width;
+  					if (clipText) {
+ -						if (maxWidth >= 10) {
+ +						stopClipping = textWidth > maxWidth;
+ +						if (maxWidth >= 10 && !(stopClipping && k >= 1)) {
+  							lines.push(textLines[k]);
+  						}
+  					} else {
+ 						if (textWidth < maxWidth) {
+ 							lines.push(textLines[k]);
+ 						}
+ 					}
+ 				}
+ 
+ 				textWidth = 0;
+ 				textHeight = context.measureText('M').width;
+ 
+ 				if (!alignCenter) {
+ 					for (let i = 0; i < lines.length; ++i) {
+ 						if (context.measureText(lines[i]).width > textWidth) {
+ 							textWidth = context.measureText(lines[i]).width;
+ 						}
+ 					}
+ 				}
+ 
+ 				for (let j = 0; j < lines.length; ++j) {
+ 					if (alignCenter) {
+ 						textWidth = context.measureText(lines[j]).width;
+ 						if (clipText && textWidth >= maxWidth) {
+ 							textWidth = maxWidth - (clipTextPadding * 2);
+ 						}
+ 					}
+ 					context.beginPath();
+ 					context.fillStyle = style;
+ 					context.fillText(
+ 						lines[j],
+ 						x - textWidth / 2,
+ 						y + (textHeight / 2) + (j * (textHeight + 3)) - (lines.length > 1 && alignCenter ? lines.length * (textHeight - 3) / 2 : 0)
+ 					);
+ 					context.closePath();
+ 				}
+ 
+ 				if (clipText) {
+ 					context.restore();
+ 				}
+ 			},
 			drawTooltipBox: function(context, x, y, width, height, radius = 5, fill, strokeLineWidth, strokeStyle, arrowPosition, arrowHeight) {
 				if (typeof radius === 'number') {
 					radius = {tl: radius, tr: radius, br: radius, bl: radius};
