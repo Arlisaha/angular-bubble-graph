@@ -310,7 +310,7 @@ angular.module('bubbleGraph', [])
 				);
 			},
 			drawBubbleArrowTooltip: function(context, bubble, arrowHeight = 10) {
-				let x, y, arrowPosition, tooltipWidth = 0, unplaced = true,
+				let x, y, arrowPosition, tooltipWidth = 0, unplaced = true, i = 0,
 					textHeight = bubble.tooltip.text.lines.length > 1 ? context.measureText('M').width * (bubble.tooltip.text.lines.length) : 0,
 					tooltipHeight = context.measureText('M').width * (bubble.tooltip.text.lines.length + 3);
 
@@ -323,13 +323,14 @@ angular.module('bubbleGraph', [])
 				while (unplaced) {
 					switch (bubble.tooltip.position) {
 						case 'bottom':
+							++i;
 							x = bubble.x - tooltipWidth / 2;
 							y = bubble.y + bubble.r + bubble.stroke.lineWidth - 1 + arrowHeight;
-							if (y + tooltipHeight > context.canvas.height) {
+							if (y + tooltipHeight > context.canvas.height && i < 4) {
 								bubble.tooltip.position = 'top';
-							} else if (x < 0) {
+							} else if (x < 0 && i < 4) {
 								bubble.tooltip.position = 'right';
-							} else if (x + tooltipWidth > context.canvas.width) {
+							} else if (x + tooltipWidth > context.canvas.width && i < 4) {
 								bubble.tooltip.position = 'left';
 							} else {
 								unplaced = false;
@@ -337,13 +338,14 @@ angular.module('bubbleGraph', [])
 							}
 							break;
 						case 'left':
+							++i;
 							x = bubble.x - bubble.r - bubble.stroke.lineWidth + 1 - arrowHeight - tooltipWidth;
 							y = bubble.y - (tooltipHeight / 2);
-							if (x < 0) {
+							if (x < 0 && i < 4) {
 								bubble.tooltip.position = 'right';
-							} else if (y + tooltipHeight > context.canvas.height) {
+							} else if (y + tooltipHeight > context.canvas.height && i < 4) {
 								bubble.tooltip.position = 'top';
-							} else if (y < 0) {
+							} else if (y < 0 && i < 4) {
 								bubble.tooltip.position = 'bottom';
 							} else {
 								unplaced = false;
@@ -351,23 +353,29 @@ angular.module('bubbleGraph', [])
 							}
 							break;
 						case 'top':
+							++i;
 							x = bubble.x - tooltipWidth / 2;
 							y = bubble.y - bubble.r - bubble.stroke.lineWidth + 1 - arrowHeight - tooltipHeight;
-							if (y < 0) {
+							if (y < 0 && i < 4) {
 								bubble.tooltip.position = 'bottom';
-							} else {
+							} else if (x < 0 && i < 4) {
+								bubble.tooltip.position = 'right';
+							} else if (x + tooltipWidth > context.canvas.width && i < 4) {
+								bubble.tooltip.position = 'left';
+							}  else {
 								unplaced = false;
 								arrowPosition = 'bottom';
 							}
 							break;
 						case 'right':
+							++i;
 							x = bubble.x + bubble.r + bubble.stroke.lineWidth - 1 + arrowHeight;
 							y = bubble.y - (tooltipHeight / 2);
-							if (x + tooltipWidth > context.canvas.width) {
+							if (x + tooltipWidth > context.canvas.width && i < 4) {
 								bubble.tooltip.position = 'left';
-							} else if (y + tooltipHeight > context.canvas.height) {
+							} else if (y + tooltipHeight > context.canvas.height && i < 4) {
 								bubble.tooltip.position = 'top';
-							} else if (y < 0) {
+							} else if (y < 0 && i < 4) {
 								bubble.tooltip.position = 'bottom';
 							} else {
 								unplaced = false;
